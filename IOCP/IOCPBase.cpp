@@ -4,7 +4,7 @@
 
 #pragma comment(lib, "WS2_32.lib")
 
-IOContextPool SocketContext::ioContextPool;		// ³õÊ¼»¯
+IOContextPool SocketContext::ioContextPool;		// åˆå§‹åŒ–
 
 IOCPBase::IOCPBase() :
 	completionPort(INVALID_HANDLE_VALUE),
@@ -50,19 +50,19 @@ void IOCPBase::Stop()
 {
 	if (listenSockContext != NULL && listenSockContext->connSocket != INVALID_SOCKET)
 	{
-		// ¼¤»î¹Ø±ÕÊÂ¼ş
+		// æ¿€æ´»å…³é—­äº‹ä»¶
 		SetEvent(stopEvent);
 
 		for (int i = 0; i < workerThreadNum; i++)
 		{
-			// Í¨ÖªËùÓĞÍê³É¶Ë¿ÚÍË³ö
+			// é€šçŸ¥æ‰€æœ‰å®Œæˆç«¯å£é€€å‡º
 			PostQueuedCompletionStatus(completionPort, 0, (DWORD)EXIT_CODE, NULL);
 		}
 
-		// µÈ´ıËùÓĞ¹¤×÷Ïß³ÌÍË³ö
+		// ç­‰å¾…æ‰€æœ‰å·¥ä½œçº¿ç¨‹é€€å‡º
 		WaitForMultipleObjects(workerThreadNum, workerThreads, TRUE, INFINITE);
 
-		// ÊÍ·ÅÆäËû×ÊÔ´
+		// é‡Šæ”¾å…¶ä»–èµ„æº
 		DeInitialize();
 	}
 }
@@ -82,7 +82,7 @@ wstring IOCPBase::GetLocalIP()
 	//	return string(DEFAULT_IP);
 	//}
 
-	//// È¡µÃIPµØÖ·ÁĞ±íÖĞµÄµÚÒ»¸öÎª·µ»ØµÄIP(ÒòÎªÒ»Ì¨Ö÷»ú¿ÉÄÜ»á°ó¶¨¶à¸öIP)
+	//// å–å¾—IPåœ°å€åˆ—è¡¨ä¸­çš„ç¬¬ä¸€ä¸ªä¸ºè¿”å›çš„IP(å› ä¸ºä¸€å°ä¸»æœºå¯èƒ½ä¼šç»‘å®šå¤šä¸ªIP)
 	//char *addr = hostent->h_addr_list[0];
 	//in_addr inAddr;
 	//memmove(&inAddr, addr, 4);
@@ -111,35 +111,35 @@ BOOL IOCPBase::InitializeIOCP()
 
 BOOL IOCPBase::InitializeListenSocket()
 {
-	// Éú³ÉÓÃÓÚ¼àÌıµÄsocketµÄContext
+	// ç”Ÿæˆç”¨äºç›‘å¬çš„socketçš„Context
 	listenSockContext = new SocketContext;
 	listenSockContext->connSocket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
 	if (INVALID_SOCKET == listenSockContext->connSocket)
 		return false;
 
-	// ½«socket°ó¶¨µ½Íê³É¶Ë¿ÚÖĞ
-	if (NULL == CreateIoCompletionPort((HANDLE)listenSockContext->connSocket, completionPort, (DWORD)listenSockContext, 0))
+	// å°†socketç»‘å®šåˆ°å®Œæˆç«¯å£ä¸­
+	if (NULL == CreateIoCompletionPort((HANDLE)listenSockContext->connSocket, completionPort, (DWORD_PTR)listenSockContext, 0))
 	{
 		RELEASE_SOCKET(listenSockContext->connSocket);
 		return false;
 	}
 
-	//·şÎñÆ÷µØÖ·ĞÅÏ¢£¬ÓÃÓÚ°ó¶¨socket
+	//æœåŠ¡å™¨åœ°å€ä¿¡æ¯ï¼Œç”¨äºç»‘å®šsocket
 	sockaddr_in serverAddr;
 
-	// Ìî³äµØÖ·ĞÅÏ¢
+	// å¡«å……åœ°å€ä¿¡æ¯
 	ZeroMemory((char *)&serverAddr, sizeof(serverAddr));
 	serverAddr.sin_family = AF_INET;
 	serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serverAddr.sin_port = htons(port);
 
-	// °ó¶¨µØÖ·ºÍ¶Ë¿Ú
+	// ç»‘å®šåœ°å€å’Œç«¯å£
 	if (SOCKET_ERROR == bind(listenSockContext->connSocket, (sockaddr *)&serverAddr, sizeof(serverAddr)))
 	{
 		return false;
 	}
 
-	// ¿ªÊ¼¼àÌı
+	// å¼€å§‹ç›‘å¬
 	if (SOCKET_ERROR == listen(listenSockContext->connSocket, SOMAXCONN))
 	{
 		return false;
@@ -147,7 +147,7 @@ BOOL IOCPBase::InitializeListenSocket()
 
 	GUID guidAcceptEx = WSAID_ACCEPTEX;
 	GUID guidGetAcceptSockAddrs = WSAID_GETACCEPTEXSOCKADDRS;
-	// ÌáÈ¡À©Õ¹º¯ÊıÖ¸Õë
+	// æå–æ‰©å±•å‡½æ•°æŒ‡é’ˆ
 	DWORD dwBytes = 0;
 	if (SOCKET_ERROR == WSAIoctl(
 		listenSockContext->connSocket,
@@ -193,10 +193,10 @@ BOOL IOCPBase::InitializeListenSocket()
 
 void IOCPBase::DeInitialize()
 {
-	// ¹Ø±ÕÏµÍ³ÍË³öÊÂ¼ş¾ä±ú
+	// å…³é—­ç³»ç»Ÿé€€å‡ºäº‹ä»¶å¥æŸ„
 	RELEASE_HANDLE(stopEvent);
 
-	// ÊÍ·Å¹¤×÷ÕßÏß³Ì¾ä±úÖ¸Õë
+	// é‡Šæ”¾å·¥ä½œè€…çº¿ç¨‹å¥æŸ„æŒ‡é’ˆ
 	for (int i = 0; i<workerThreadNum; i++)
 	{
 		RELEASE_HANDLE(workerThreads[i]);
@@ -204,10 +204,10 @@ void IOCPBase::DeInitialize()
 
 	RELEASE(workerThreads);
 
-	// ¹Ø±ÕIOCP¾ä±ú
+	// å…³é—­IOCPå¥æŸ„
 	RELEASE_HANDLE(completionPort);
 
-	// ¹Ø±Õ¼àÌıSocket
+	// å…³é—­ç›‘å¬Socket
 	RELEASE(listenSockContext);
 }
 
@@ -228,8 +228,8 @@ int IOCPBase::GetNumOfProcessors()
 
 BOOL IOCPBase::AssociateWithIOCP(SocketContext * sockContext)
 {
-	// ½«ÓÃÓÚºÍ¿Í»§¶ËÍ¨ĞÅµÄSOCKET°ó¶¨µ½Íê³É¶Ë¿ÚÖĞ
-	HANDLE hTemp = CreateIoCompletionPort((HANDLE)sockContext->connSocket, completionPort, (DWORD)sockContext, 0);
+	// å°†ç”¨äºå’Œå®¢æˆ·ç«¯é€šä¿¡çš„SOCKETç»‘å®šåˆ°å®Œæˆç«¯å£ä¸­
+	HANDLE hTemp = CreateIoCompletionPort((HANDLE)sockContext->connSocket, completionPort, (DWORD_PTR)sockContext, 0);
 
 	if (NULL == hTemp)
 	{
@@ -249,7 +249,7 @@ BOOL IOCPBase::PostAccept(SocketContext * sockContext, IOContext * ioContext)
 		return false;
 	}
 	
-	// ½«½ÓÊÕ»º³åÖÃÎª0,ÁîAcceptExÖ±½Ó·µ»Ø,·ÀÖ¹¾Ü¾ø·şÎñ¹¥»÷
+	// å°†æ¥æ”¶ç¼“å†²ç½®ä¸º0,ä»¤AcceptExç›´æ¥è¿”å›,é˜²æ­¢æ‹’ç»æœåŠ¡æ”»å‡»
 	if (false == fnAcceptEx(listenSockContext->connSocket, ioContext->ioSocket, ioContext->wsaBuf.buf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &dwBytes, &ioContext->overLapped))
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
@@ -269,7 +269,7 @@ BOOL IOCPBase::PostRecv(SocketContext * sockContext, IOContext *ioContext)
 	ioContext->ioType = RECV_POSTED;
 
 	int nBytesRecv = WSARecv(ioContext->ioSocket, &ioContext->wsaBuf, 1, &dwBytes, &dwFlags, &ioContext->overLapped, NULL);
-	// Èç¹û·µ»ØÖµ´íÎó£¬²¢ÇÒ´íÎóµÄ´úÂë²¢·ÇÊÇPendingµÄ»°£¬ÄÇ¾ÍËµÃ÷Õâ¸öÖØµşÇëÇóÊ§°ÜÁË
+	// å¦‚æœè¿”å›å€¼é”™è¯¯ï¼Œå¹¶ä¸”é”™è¯¯çš„ä»£ç å¹¶éæ˜¯Pendingçš„è¯ï¼Œé‚£å°±è¯´æ˜è¿™ä¸ªé‡å è¯·æ±‚å¤±è´¥äº†
 	if ((SOCKET_ERROR == nBytesRecv) && (WSA_IO_PENDING != WSAGetLastError()))
 	{
 		DoClose(sockContext);
@@ -304,22 +304,22 @@ BOOL IOCPBase::DoAccpet(SocketContext * sockContext, IOContext * ioContext)
 	int clientAddrLen, localAddrLen;
 	clientAddrLen = localAddrLen = sizeof(SOCKADDR_IN);
 
-	// 1. »ñÈ¡µØÖ·ĞÅÏ¢ £¨GetAcceptExSockAddrsº¯Êı²»½ö¿ÉÒÔ»ñÈ¡µØÖ·ĞÅÏ¢£¬»¹¿ÉÒÔË³±ãÈ¡³öµÚÒ»×éÊı¾İ£©
+	// 1. è·å–åœ°å€ä¿¡æ¯ ï¼ˆGetAcceptExSockAddrså‡½æ•°ä¸ä»…å¯ä»¥è·å–åœ°å€ä¿¡æ¯ï¼Œè¿˜å¯ä»¥é¡ºä¾¿å–å‡ºç¬¬ä¸€ç»„æ•°æ®ï¼‰
 	fnGetAcceptExSockAddrs(ioContext->wsaBuf.buf, 0, localAddrLen, clientAddrLen, (LPSOCKADDR *)&localAddr, &localAddrLen, (LPSOCKADDR *)&clientAddr, &clientAddrLen);
 
-	// 2. ÎªĞÂÁ¬½Ó½¨Á¢Ò»¸öSocketContext 
+	// 2. ä¸ºæ–°è¿æ¥å»ºç«‹ä¸€ä¸ªSocketContext 
 	SocketContext *newSockContext = new SocketContext;
 	newSockContext->connSocket = ioContext->ioSocket;
 	memcpy_s(&(newSockContext->clientAddr), sizeof(SOCKADDR_IN), clientAddr, sizeof(SOCKADDR_IN));
 
-	// 3. ½«listenSocketContextµÄIOContext ÖØÖÃºó¼ÌĞøÍ¶µİAcceptEx
+	// 3. å°†listenSocketContextçš„IOContext é‡ç½®åç»§ç»­æŠ•é€’AcceptEx
 	ioContext->Reset();
 	if (false == PostAccept(listenSockContext, ioContext))
 	{
 		listenSockContext->RemoveContext(ioContext);
 	}
 
-	// 4. ½«ĞÂsocketºÍÍê³É¶Ë¿Ú°ó¶¨
+	// 4. å°†æ–°socketå’Œå®Œæˆç«¯å£ç»‘å®š
 	if (NULL == CreateIoCompletionPort((HANDLE)newSockContext->connSocket, completionPort, (DWORD)newSockContext, 0))
 	{
 		DWORD dwErr = WSAGetLastError();
@@ -330,12 +330,12 @@ BOOL IOCPBase::DoAccpet(SocketContext * sockContext, IOContext * ioContext)
 		}
 	}
 
-	// ²¢ÉèÖÃtcp_keepalive
+	// å¹¶è®¾ç½®tcp_keepalive
 	tcp_keepalive alive_in;
 	tcp_keepalive alive_out;
 	alive_in.onoff = TRUE;
-	alive_in.keepalivetime = 1000 * 60;  // 60s  ¶à³¤Ê±¼ä£¨ ms £©Ã»ÓĞÊı¾İ¾Í¿ªÊ¼ send ĞÄÌø°ü
-	alive_in.keepaliveinterval = 1000 * 10; //10s  Ã¿¸ô¶à³¤Ê±¼ä£¨ ms £© send Ò»¸öĞÄÌø°ü
+	alive_in.keepalivetime = 1000 * 60;  // 60s  å¤šé•¿æ—¶é—´ï¼ˆ ms ï¼‰æ²¡æœ‰æ•°æ®å°±å¼€å§‹ send å¿ƒè·³åŒ…
+	alive_in.keepaliveinterval = 1000 * 10; //10s  æ¯éš”å¤šé•¿æ—¶é—´ï¼ˆ ms ï¼‰ send ä¸€ä¸ªå¿ƒè·³åŒ…
 	unsigned long ulBytesReturn = 0;
 	if (SOCKET_ERROR == WSAIoctl(newSockContext->connSocket, SIO_KEEPALIVE_VALS, &alive_in, sizeof(alive_in), &alive_out, sizeof(alive_out), &ulBytesReturn, NULL, NULL))
 	{
@@ -345,11 +345,11 @@ BOOL IOCPBase::DoAccpet(SocketContext * sockContext, IOContext * ioContext)
 
 	OnConnectionEstablished(newSockContext);
 
-	// 5. ½¨Á¢recv²Ù×÷ËùĞèµÄioContext£¬ÔÚĞÂÁ¬½ÓµÄsocketÉÏÍ¶µİrecvÇëÇó
+	// 5. å»ºç«‹recvæ“ä½œæ‰€éœ€çš„ioContextï¼Œåœ¨æ–°è¿æ¥çš„socketä¸ŠæŠ•é€’recvè¯·æ±‚
 	IOContext *newIoContext = newSockContext->GetNewIOContext();
 	newIoContext->ioType = RECV_POSTED;
 	newIoContext->ioSocket = newSockContext->connSocket;
-	// Í¶µİrecvÇëÇó
+	// æŠ•é€’recvè¯·æ±‚
 	if (false == PostRecv(newSockContext, newIoContext))
 	{
 		DoClose(sockContext);
@@ -396,10 +396,10 @@ DWORD IOCPBase::WorkerThreadProc(LPVOID lpParam)
 	{
 		BOOL bRet = GetQueuedCompletionStatus(iocp->completionPort, &dwBytes, (PULONG_PTR)&sockContext, &ol, INFINITE);
 
-		// ¶ÁÈ¡´«ÈëµÄ²ÎÊı
+		// è¯»å–ä¼ å…¥çš„å‚æ•°
 		ioContext = CONTAINING_RECORD(ol, IOContext, overLapped);
 
-		// ÊÕµ½ÍË³ö±êÖ¾
+		// æ”¶åˆ°é€€å‡ºæ ‡å¿—
 		if (EXIT_CODE == (DWORD)sockContext)
 		{
 			break;
@@ -409,15 +409,15 @@ DWORD IOCPBase::WorkerThreadProc(LPVOID lpParam)
 		{
 			DWORD dwErr = GetLastError();
 
-			// Èç¹ûÊÇ³¬Ê±ÁË£¬¾ÍÔÙ¼ÌĞøµÈ°É  
+			// å¦‚æœæ˜¯è¶…æ—¶äº†ï¼Œå°±å†ç»§ç»­ç­‰å§  
 			if (WAIT_TIMEOUT == dwErr)
 			{
-				// È·ÈÏ¿Í»§¶ËÊÇ·ñ»¹»î×Å...
+				// ç¡®è®¤å®¢æˆ·ç«¯æ˜¯å¦è¿˜æ´»ç€...
 				if (!iocp->IsSocketAlive(sockContext->connSocket))
 				{
 					iocp->OnConnectionClosed(sockContext);
 
-					// »ØÊÕsocket
+					// å›æ”¶socket
 					iocp->DoClose(sockContext);
 					continue;
 				}
@@ -426,12 +426,12 @@ DWORD IOCPBase::WorkerThreadProc(LPVOID lpParam)
 					continue;
 				}
 			}
-			// ¿ÉÄÜÊÇ¿Í»§¶ËÒì³£ÍË³öÁË(64)
+			// å¯èƒ½æ˜¯å®¢æˆ·ç«¯å¼‚å¸¸é€€å‡ºäº†(64)
 			else if (ERROR_NETNAME_DELETED == dwErr)
 			{
 				iocp->OnConnectionError(sockContext, dwErr);
 
-				// »ØÊÕsocket
+				// å›æ”¶socket
 				iocp->DoClose(sockContext);
 				continue;
 			}
@@ -439,19 +439,19 @@ DWORD IOCPBase::WorkerThreadProc(LPVOID lpParam)
 			{
 				iocp->OnConnectionError(sockContext, dwErr);
 
-				// »ØÊÕsocket
+				// å›æ”¶socket
 				iocp->DoClose(sockContext);
 				continue;
 			}
 		}
 		else
 		{
-			// ÅĞ¶ÏÊÇ·ñÓĞ¿Í»§¶Ë¶Ï¿ª
+			// åˆ¤æ–­æ˜¯å¦æœ‰å®¢æˆ·ç«¯æ–­å¼€
 			if ((0 == dwBytes) && (RECV_POSTED == ioContext->ioType || SEND_POSTED == ioContext->ioType))
 			{
 				iocp->OnConnectionClosed(sockContext);
 
-				// »ØÊÕsocket
+				// å›æ”¶socket
 				iocp->DoClose(sockContext);
 				continue;
 			}
@@ -475,7 +475,7 @@ DWORD IOCPBase::WorkerThreadProc(LPVOID lpParam)
 		}
 	}
 
-	// ÊÍ·ÅÏß³Ì²ÎÊı
+	// é‡Šæ”¾çº¿ç¨‹å‚æ•°
 	RELEASE(lpParam);
 	return 0;
 }
